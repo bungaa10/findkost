@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "856063449095",
+    "project_id": "findkost-4f709",
+    "storage_bucket": "findkost-4f709.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:856063449095:android:da2a2f0d236afa77fcf2a2",
+        "android_client_info": {
+          "package_name": "com.example.findkost"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "856063449095-ajpevfi7khn0dtkfjh3m3lk5schslq00.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.findkost",
+            "certificate_hash": "bc1e83f7c59a27460017bf46e9bc42918f1c51f3"
+          }
+        },
+        {
+          "client_id": "856063449095-237luotfqah965jgjh3og79sfvuch0cm.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCrbvpJVR1z6w9BB9JJikem1IOwqSRjyrE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "856063449095-237luotfqah965jgjh3og79sfvuch0cm.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "856063449095-ic8fok2ghppvtnebelg2s79dq4c7u43u.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.findkost"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
