@@ -127,6 +127,26 @@ class SocketService {
     log('📤 Booking notification sent to owner $ownerId');
   }
 
+  void sendBookingConfirm({
+    required int bookingId,
+    required int studentId,
+    required String status,
+    String message = 'Status booking Anda diperbarui',
+  }) {
+    if (_socket == null || !_isConnected) {
+      log('⚠️ Cannot send confirm: socket not connected');
+      return;
+    }
+
+    _socket!.emit('booking:confirm', {
+      'bookingId': bookingId,
+      'studentId': studentId,
+      'status': status,
+      'message': message,
+    });
+    log('📤 Booking confirm sent to student $studentId: $status');
+  }
+
   void disconnect() {
     if (_socket != null) {
       _socket!.disconnect();

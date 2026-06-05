@@ -219,17 +219,19 @@ Future<void> loadSession() async {
 
   void _initSocket() {
     if (user != null) {
-      SocketService().connect(serverUrl: ApiConfig.socketUrl);
-      
-      int parsedUserId = user!["id"] is int 
-          ? user!["id"] 
-          : int.tryParse(user!["id"].toString()) ?? 0;
+      SocketService().onConnected = () {
+        int parsedUserId = user!["id"] is int 
+            ? user!["id"] 
+            : int.tryParse(user!["id"].toString()) ?? 0;
 
-      SocketService().registerUser(
-        userId: parsedUserId,
-        userName: user!["name"] ?? "User",
-        role: userRole,
-      );
+        SocketService().registerUser(
+          userId: parsedUserId,
+          userName: user!["name"] ?? "User",
+          role: userRole,
+        );
+      };
+      
+      SocketService().connect(serverUrl: ApiConfig.socketUrl);
     }
   }
 }

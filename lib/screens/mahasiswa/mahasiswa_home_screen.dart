@@ -6,6 +6,9 @@ import '../kost/kost_detail_screen.dart';
 import 'mahasiswa_search_screen.dart';
 import 'mahasiswa_booking_screen.dart';
 import '../profile/profile_screen.dart';
+import '../../services/socket_service.dart';
+import '../../services/notification_service.dart';
+import '../../providers/booking_provider.dart';
 
 class MahasiswaHomeScreen extends StatefulWidget {
   const MahasiswaHomeScreen({super.key});
@@ -23,8 +26,66 @@ class _MahasiswaHomeScreenState extends State<MahasiswaHomeScreen> {
     Future.microtask(() {
       if (mounted) {
         context.read<KostProvider>().fetchKost();
+        
+        // Force register socket to ensure Student is online
+        final auth = context.read<AuthProvider>();
+        if (auth.user != null) {
+          int parsedUserId = auth.user!["id"] is int 
+              ? auth.user!["id"] 
+              : int.tryParse(auth.user!["id"].toString()) ?? 0;
+              
+          SocketService().registerUser(
+            userId: parsedUserId,
+            userName: auth.user!["name"] ?? "Mahasiswa",
+            role: "mahasiswa",
+          );
+        }
+        
+        _setupSocketListener();
       }
     });
+  }
+
+  void _setupSocketListener() {
+    SocketService().onBookingStatusUpdate = (data) async {
+      print('📨 Booking status update received: $data');
+
+      await NotificationService().showNotification(
+        id: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+        title: 'Status Booking Diperbarui!',
+        body: data['message'] ?? 'Status booking Anda berubah menjadi ${data['status']}',
+        payload: 'booking_id:${data['bookingId']}',
+      );
+
+      if (mounted) {
+        // Refresh bookings data globally
+        final auth = context.read<AuthProvider>();
+        final userId = auth.user?['id'];
+        if (userId != null) {
+          context.read<BookingProvider>().getMyBookings(int.parse(userId.toString()));
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.info_outline, color: Colors.white),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    data['message'] ?? 'Status booking diperbarui',
+                    style: const TextStyle(fontSize: 13),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: data['status'] == 'confirmed' ? Colors.green[700] : Colors.red[700],
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    };
   }
 
   @override
@@ -138,7 +199,7 @@ class MahasiswaHomeContent extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                "Halo, $userName! 👋",
+                                "Halo, $userName!",
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 20,

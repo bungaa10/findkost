@@ -4,8 +4,11 @@ import 'package:findkost/screens/kost/kost_list_screen.dart';
 import 'package:findkost/screens/profile/profile_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../providers/auth_provider.dart';
-import '../../providers/kost_provider.dart';
+import 'package:findkost/providers/auth_provider.dart';
+import 'package:findkost/providers/kost_provider.dart';
+import 'package:findkost/services/socket_service.dart';
+import 'package:findkost/services/notification_service.dart';
+import 'package:findkost/providers/booking_provider.dart';
 import 'owner_booking_screen.dart';
 
 class OwnerDashboardScreen extends StatefulWidget {
@@ -24,8 +27,69 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
     Future.microtask(() {
       if (mounted) {
         context.read<KostProvider>().fetchKost();
+        
+        // Force register socket to ensure Owner is online
+        final auth = context.read<AuthProvider>();
+        if (auth.user != null) {
+          int parsedUserId = auth.user!["id"] is int 
+              ? auth.user!["id"] 
+              : int.tryParse(auth.user!["id"].toString()) ?? 0;
+              
+          SocketService().registerUser(
+            userId: parsedUserId,
+            userName: auth.user!["name"] ?? "Owner",
+            role: "pemilik",
+          );
+        }
+        
+        _setupSocketListener();
       }
     });
+  }
+
+  void _setupSocketListener() {
+    SocketService().onBookingNotification = (data) async {
+      print('📨 Booking notification received: $data');
+
+      // Tampilkan notifikasi sistem
+      await NotificationService().showNotification(
+        id: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+        title: 'Ada Pesanan Baru',
+        body: '${data['studentName']} memesan ${data['kostName']}',
+        payload: 'booking_id:${data['bookingId']}',
+      );
+
+      if (mounted) {
+        // Refresh bookings data globally
+        final auth = context.read<AuthProvider>();
+        final ownerId = auth.user?['id'];
+        if (ownerId != null) {
+          context.read<BookingProvider>().getOwnerBookings(
+            int.parse(ownerId.toString()),
+          );
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.notifications_active, color: Colors.white),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    '${data['studentName']} memesan ${data['kostName']}',
+                    style: const TextStyle(fontSize: 13),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.blue[700],
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    };
   }
 
   @override
@@ -156,7 +220,7 @@ class OwnerHomeContent extends StatelessWidget {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      "Halo, $userName! 👋",
+                                      "Halo, $userName! ",
                                       style: const TextStyle(
                                         color: Colors.white,
                                         fontSize: 22,
@@ -217,12 +281,6 @@ class OwnerHomeContent extends StatelessWidget {
                                 Colors.green,
                               ),
                               const SizedBox(width: 12),
-                              _statCard(
-                                "Pesanan",
-                                totalBooking.toString(),
-                                Icons.receipt_long_rounded,
-                                Colors.orange,
-                              ),
                             ],
                           ),
                         ],

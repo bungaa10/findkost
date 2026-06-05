@@ -193,79 +193,138 @@ class _KostFormScreenState extends State<KostFormScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xffF8FAFC),
-      appBar: AppBar(
-        title: Text(
-          widget.kost == null ? 'Tambah Kost Baru' : 'Edit Data Kost',
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        elevation: 0,
-        backgroundColor: const Color(0xff3B82F6),
-        foregroundColor: Colors.white,
-      ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: EdgeInsets.all(padding),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                /// HEADER
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: const Color(0xff3B82F6).withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: const Color(0xff3B82F6).withOpacity(0.3),
-                    ),
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            expandedHeight: 140,
+            pinned: true,
+            backgroundColor: const Color(0xff1E3A8A),
+            flexibleSpace: FlexibleSpaceBar(
+              background: Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Color(0xff1E3A8A),
+                      Color(0xff3B82F6),
+                      Color(0xff60A5FA),
+                    ],
                   ),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: const Color(0xff3B82F6),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Icon(
-                          widget.kost == null ? Icons.add_home : Icons.edit,
-                          color: Colors.white,
-                          size: 24,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                  borderRadius: BorderRadius.only(
+                    bottomLeft: Radius.circular(30),
+                    bottomRight: Radius.circular(30),
+                  ),
+                ),
+                child: SafeArea(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Row(
                           children: [
-                            Text(
-                              widget.kost == null
-                                  ? 'Tambahkan Kost Baru'
-                                  : 'Ubah Data Kost',
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xff3B82F6),
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Icon(
+                                widget.kost == null ? Icons.add_home_work : Icons.edit,
+                                color: Colors.white,
+                                size: 28,
                               ),
                             ),
-                            const SizedBox(height: 4),
-                            Text(
-                              widget.kost == null
-                                  ? 'Isi semua data dengan lengkap'
-                                  : 'Perbarui informasi kost Anda',
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey,
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Text(
+                                widget.kost == null ? 'Tambah Kost Baru' : 'Edit Data Kost',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                           ],
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
-                const SizedBox(height: 24),
+              ),
+            ),
+          ),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.all(padding),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    /// HEADER
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.04),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: const Color(0xff3B82F6).withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Icon(
+                              widget.kost == null ? Icons.info_outline : Icons.edit_note,
+                              color: const Color(0xff3B82F6),
+                              size: 28,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  widget.kost == null
+                                      ? 'Informasi Properti'
+                                      : 'Perbarui Properti',
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xff1E293B),
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  widget.kost == null
+                                      ? 'Pastikan data kost diisi dengan akurat dan menarik.'
+                                      : 'Ubah informasi yang diperlukan di bawah ini.',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey[500],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 24),
 
                 /// FORM FIELDS
                 Text(
@@ -571,6 +630,8 @@ class _KostFormScreenState extends State<KostFormScreen> {
           ),
         ),
       ),
-    );
+    ],
+  ),
+);
   }
 }

@@ -20,45 +20,7 @@ class _OwnerBookingScreenState extends State<OwnerBookingScreen> {
   @override
   void initState() {
     super.initState();
-    _setupSocketListener();
     _loadBookings();
-  }
-
-  void _setupSocketListener() {
-    SocketService().onBookingNotification = (data) async {
-      print('📨 Booking notification received: $data');
-
-      await NotificationService().showNotification(
-        id: DateTime.now().millisecondsSinceEpoch ~/ 1000,
-        title: '📢 Booking Baru!',
-        body: '${data['studentName']} memesan ${data['kostName']}',
-        payload: 'booking_id:${data['bookingId']}',
-      );
-
-      _loadBookings();
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.notifications_active, color: Colors.white),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'Booking baru dari ${data['studentName']} untuk ${data['kostName']}',
-                    style: const TextStyle(fontSize: 13),
-                  ),
-                ),
-              ],
-            ),
-            backgroundColor: Colors.green[700],
-            behavior: SnackBarBehavior.floating,
-            duration: const Duration(seconds: 4),
-          ),
-        );
-      }
-    };
   }
 
   Future<void> _loadBookings() async {
@@ -93,6 +55,7 @@ class _OwnerBookingScreenState extends State<OwnerBookingScreen> {
                   'id': b.id,
                   'kost_id': b.kostId,
                   'kost_name': b.kostName,
+                  'student_id': b.userId,
                   'student_name': b.userName,
                   'duration': b.durasiBulan,
                   'total_price': b.totalHarga,
@@ -116,7 +79,7 @@ class _OwnerBookingScreenState extends State<OwnerBookingScreen> {
     }
   }
 
-  Future<void> _updateBookingStatus(int bookingId, String newStatus) async {
+  Future<void> _updateBookingStatus(int bookingId, String newStatus, int studentId) async {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -131,6 +94,14 @@ class _OwnerBookingScreenState extends State<OwnerBookingScreen> {
       final success = await bookingProvider.updateStatus(bookingId, newStatus);
 
       if (success) {
+        // Kirim notifikasi ke mahasiswa via websocket
+        SocketService().sendBookingConfirm(
+          bookingId: bookingId,
+          studentId: studentId,
+          status: newStatus,
+          message: 'Booking Anda telah di${newStatus == 'confirmed' ? 'terima' : 'tolak'}',
+        );
+
         await _loadBookings();
 
         if (mounted) {
@@ -237,7 +208,7 @@ class _OwnerBookingScreenState extends State<OwnerBookingScreen> {
               ],
             ),
             const Divider(height: 30),
-            _detailRow('Nama Mahasiswa', booking['user_name']),
+            _detailRow('Nama Mahasiswa', booking['student_name']),
             _detailRow('Tanggal Masuk', booking['check_in_date']),
             _detailRow('Durasi Sewa', '${booking['duration']} bulan'),
             _detailRow('Total Harga', _formatRupiah(booking['total_price'])),
@@ -273,7 +244,7 @@ class _OwnerBookingScreenState extends State<OwnerBookingScreen> {
                     child: ElevatedButton.icon(
                       onPressed: () {
                         Navigator.pop(context);
-                        _updateBookingStatus(booking['id'], 'confirmed');
+                        _updateBookingStatus(booking['id'], 'confirmed', booking['student_id']);
                       },
                       icon: const Icon(Icons.check_circle, size: 18),
                       label: const Text('Terima'),
@@ -292,7 +263,7 @@ class _OwnerBookingScreenState extends State<OwnerBookingScreen> {
                     child: ElevatedButton.icon(
                       onPressed: () {
                         Navigator.pop(context);
-                        _updateBookingStatus(booking['id'], 'cancelled');
+                        _updateBookingStatus(booking['id'], 'cancelled', booking['student_id']);
                       },
                       icon: const Icon(Icons.cancel, size: 18),
                       label: const Text('Tolak'),
