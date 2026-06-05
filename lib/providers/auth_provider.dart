@@ -220,8 +220,13 @@ Future<void> loadSession() async {
   void _initSocket() {
     if (user != null) {
       SocketService().connect(serverUrl: ApiConfig.socketUrl);
+      
+      int parsedUserId = user!["id"] is int 
+          ? user!["id"] 
+          : int.tryParse(user!["id"].toString()) ?? 0;
+
       SocketService().registerUser(
-        userId: user!["id"],
+        userId: parsedUserId,
         userName: user!["name"] ?? "User",
         role: userRole,
       );

@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/kost_provider.dart';
+import 'owner_booking_screen.dart';
 
 class OwnerDashboardScreen extends StatefulWidget {
   const OwnerDashboardScreen({super.key});
@@ -611,36 +612,4 @@ class OwnerHomeContent extends StatelessWidget {
   }
 }
 
-// ==================== HALAMAN PESANAN PEMILIK ====================
-class OwnerBookingScreen extends StatelessWidget {
-  const OwnerBookingScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xffF8FAFC),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.receipt_long_outlined,
-              size: 80,
-              color: Colors.grey[300],
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              "Belum ada pesanan",
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              "Pesanan dari mahasiswa akan muncul di sini",
-              style: TextStyle(color: Colors.grey[500]),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
+// Removed dummy OwnerBookingScreen to use the real one

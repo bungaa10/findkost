@@ -5,15 +5,14 @@ import 'providers/auth_provider.dart';
 import 'providers/kost_provider.dart';
 import 'providers/booking_provider.dart';
 import 'package:firebase_core/firebase_core.dart';
-// import 'services/notification_service.dart'; // HAPUS DULU
+import 'services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
 
-  // HAPUS DULU
-  // await NotificationService().init();
-  // await NotificationService().requestPermission();
+  await NotificationService().init();
+  await NotificationService().requestPermission();
 
   print('🟢 main() called');
   runApp(const MyApp());

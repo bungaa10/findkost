@@ -19,7 +19,7 @@ class BookingService {
   }) async {
     try {
       final response = await http.post(
-        Uri.parse('${ApiConfig.baseUrl}/booking/store.php'),
+        Uri.parse(ApiConfig.createBooking),
         body: {
           'kost_id': kostId.toString(),
           'kost_name': kostName,
@@ -46,7 +46,7 @@ class BookingService {
   Future<Map<String, dynamic>> getMyBookings(int userId) async {
     try {
       final response = await http.get(
-        Uri.parse('${ApiConfig.baseUrl}/booking/my_bookings.php?user_id=$userId'),
+        Uri.parse('${ApiConfig.myBookings}?user_id=$userId'),
       );
 
       if (response.statusCode == 200) {
@@ -63,7 +63,7 @@ class BookingService {
   Future<Map<String, dynamic>> getOwnerBookings(int ownerId) async {
     try {
       final response = await http.get(
-        Uri.parse('${ApiConfig.baseUrl}/booking/owner.php?owner_id=$ownerId'),
+        Uri.parse('${ApiConfig.ownerBookings}?owner_id=$ownerId'),
       );
 
       if (response.statusCode == 200) {
@@ -80,7 +80,7 @@ class BookingService {
   Future<Map<String, dynamic>> updateStatus(int bookingId, String status) async {
     try {
       final response = await http.post(
-        Uri.parse('${ApiConfig.baseUrl}/booking/update_status.php'),
+        Uri.parse(ApiConfig.updateBooking),
         body: {
           'booking_id': bookingId.toString(),
           'status': status,
