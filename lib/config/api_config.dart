@@ -1,6 +1,6 @@
 class ApiConfig {
   
-  static const String baseUrl = 'http://192.168.1.46'; // Ganti ini!
+  static const String baseUrl = 'http://192.168.0.107'; // Ganti ini!
   
   // Endpoints
   static const String login = '$baseUrl/findkost_api/auth/login.php';

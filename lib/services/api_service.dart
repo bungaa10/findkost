@@ -6,7 +6,7 @@ class ApiService {
 
   // Ganti dengan IP laptop yang menjalankan Laragon
   static const String baseUrl =
-      "http://192.168.1.46/findkost_api";
+      "http://192.168.0.107/findkost_api";
 
   static Future<dynamic> get(
     String endpoint,

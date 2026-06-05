@@ -4,10 +4,12 @@ import 'package:provider/provider.dart';
 import 'providers/auth_provider.dart';
 import 'providers/kost_provider.dart';
 import 'providers/booking_provider.dart';
+import 'package:firebase_core/firebase_core.dart';
 // import 'services/notification_service.dart'; // HAPUS DULU
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
 
   // HAPUS DULU
   // await NotificationService().init();

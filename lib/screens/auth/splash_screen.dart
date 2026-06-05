@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
 import '../../providers/auth_provider.dart';
 import '../home/home_screen.dart';
 import 'login_screen.dart';
@@ -16,35 +15,28 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    print('🟢 SplashScreen: initState called');
     _checkLogin();
   }
 
   Future<void> _checkLogin() async {
-    print('🟢 SplashScreen: _checkLogin started');
-    
-    final auth = context.read<AuthProvider>();
-    print('🟢 SplashScreen: calling loadSession');
-    
-    await auth.loadSession();
-    print('🟢 SplashScreen: loadSession finished');
-    
-    print('🟢 SplashScreen: auth.isLogin = ${auth.isLogin}');
-    print('🟢 SplashScreen: auth.user = ${auth.user}');
-    
+    // Tunggu 2 detik untuk splash screen
     await Future.delayed(const Duration(seconds: 2));
-    print('🟢 SplashScreen: delay finished');
     
     if (!mounted) return;
     
+    // ✅ Gunakan Provider.of dengan listen: false
+    final auth = Provider.of<AuthProvider>(context, listen: false);
+    await auth.loadSession();
+    
+    if (!mounted) return;
+    
+    // ✅ Cek isLogin
     if (auth.isLogin) {
-      print('🟢 SplashScreen: navigating to HomeScreen');
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const HomeScreen()),
       );
     } else {
-      print('🟢 SplashScreen: navigating to LoginScreen');
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const LoginScreen()),
@@ -54,7 +46,6 @@ class _SplashScreenState extends State<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
-    print('🟢 SplashScreen: build called');
     return Scaffold(
       backgroundColor: const Color(0xff2563EB),
       body: Center(
@@ -107,6 +98,8 @@ class _SplashScreenState extends State<SplashScreen> {
                 fontSize: 14,
               ),
             ),
+            const SizedBox(height: 32),
+            const CircularProgressIndicator(color: Colors.white),
           ],
         ),
       ),

@@ -12,7 +12,7 @@ class KostProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
 
-  final String baseUrl = 'http://192.168.1.46/findkost_api/kost'; // Sesuaikan
+  final String baseUrl = 'http://192.168.0.107/findkost_api/kost'; // Sesuaikan
 
   // READ
   Future<void> fetchKost() async {
