@@ -53,10 +53,6 @@ class _MahasiswaBookingScreenState extends State<MahasiswaBookingScreen> {
                       Color(0xff60A5FA),
                     ],
                   ),
-                  borderRadius: BorderRadius.only(
-                    bottomLeft: Radius.circular(30),
-                    bottomRight: Radius.circular(30),
-                  ),
                 ),
                 child: SafeArea(
                   child: Padding(

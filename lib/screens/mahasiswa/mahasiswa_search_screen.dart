@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/kost_provider.dart';
-import '../../models/kost_model.dart';
 import '../kost/kost_detail_screen.dart';
 
 class MahasiswaSearchScreen extends StatefulWidget {
@@ -43,12 +42,67 @@ class _MahasiswaSearchScreenState extends State<MahasiswaSearchScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xffF8FAFC),
-      appBar: AppBar(
-        title: const Text("Cari Kost", style: TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: const Color(0xff1E3A8A),
-        foregroundColor: Colors.white,
-        elevation: 0,
-      ),
+      body: NestedScrollView(
+        headerSliverBuilder: (context, innerBoxIsScrolled) => [
+          SliverAppBar(
+            expandedHeight: 120,
+            pinned: true,
+            backgroundColor: const Color(0xff1E3A8A),
+            flexibleSpace: FlexibleSpaceBar(
+              background: Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Color(0xff1E3A8A),
+                      Color(0xff3B82F6),
+                      Color(0xff60A5FA),
+                    ],
+                  ),
+                ),
+                child: SafeArea(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Icon(
+                                Icons.search,
+                                color: Colors.white,
+                                size: 28,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            const Expanded(
+                              child: Text(
+                                'Cari Kost',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       body: Column(
         children: [
           Container(
@@ -176,6 +230,7 @@ class _MahasiswaSearchScreenState extends State<MahasiswaSearchScreen> {
           ),
         ],
       ),
+      )
     );
   }
 }

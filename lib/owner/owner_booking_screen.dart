@@ -409,7 +409,7 @@ class _OwnerBookingScreenState extends State<OwnerBookingScreen> {
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
-            expandedHeight: 160,
+            expandedHeight: 120,
             pinned: true,
             backgroundColor: const Color(0xff1E3A8A),
             flexibleSpace: FlexibleSpaceBar(
@@ -419,10 +419,6 @@ class _OwnerBookingScreenState extends State<OwnerBookingScreen> {
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [Color(0xff1E3A8A), Color(0xff3B82F6), Color(0xff60A5FA)],
-                  ),
-                  borderRadius: BorderRadius.only(
-                    bottomLeft: Radius.circular(30),
-                    bottomRight: Radius.circular(30),
                   ),
                 ),
                 child: SafeArea(

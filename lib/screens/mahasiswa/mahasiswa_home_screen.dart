@@ -165,10 +165,6 @@ class MahasiswaHomeContent extends StatelessWidget {
                     end: Alignment.bottomRight,
                     colors: [Color(0xff1E3A8A), Color(0xff3B82F6), Color(0xff60A5FA)],
                   ),
-                  borderRadius: BorderRadius.only(
-                    bottomLeft: Radius.circular(30),
-                    bottomRight: Radius.circular(30),
-                  ),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
