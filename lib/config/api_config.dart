@@ -1,6 +1,7 @@
 class ApiConfig {
   
   static const String baseUrl = 'http://192.168.0.107'; // Ganti ini!
+  static const String socketUrl = 'http://192.168.0.107:3000'; // Socket Server
   
   // Endpoints
   static const String login = '$baseUrl/findkost_api/auth/login.php';
@@ -11,4 +12,10 @@ class ApiConfig {
   static const String updateKost = '$baseUrl/findkost_api/kost/update.php';
   static const String deleteKost = '$baseUrl/findkost_api/kost/delete.php';
   static const String detailKost = '$baseUrl/findkost_api/kost/detail.php';
+  static const String createBooking = '$baseUrl/findkost_api/bookings/store.php';
+  static const String indexBooking = '$baseUrl/findkost_api/bookings/index.php';
+  static const String updateBooking = '$baseUrl/findkost_api/bookings/update_status.php';
+  static const String myBookings = '$baseUrl/findkost_api/bookings/my_bookings.php';
+  static const String ownerBookings = '$baseUrl/findkost_api/bookings/owner_bookings.php';
+
 }

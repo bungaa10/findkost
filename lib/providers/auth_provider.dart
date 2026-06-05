@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 
 import '../services/auth_service.dart';
 import '../config/api_config.dart';
+import '../services/socket_service.dart';
 
 class AuthProvider extends ChangeNotifier {
   final AuthService _authService = AuthService();
@@ -57,6 +58,9 @@ Future<bool> login(String email, String password, String role) async {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool("isLogin", true);
       await prefs.setString("user", jsonEncode(user));
+      
+      _initSocket();
+      
       notifyListeners();
       return true;
     } else {
@@ -144,6 +148,8 @@ bool get isPemilik => userRole == "pemilik";
         await prefs.setBool("isLogin", true);
         await prefs.setString("user", jsonEncode(user));
 
+        _initSocket();
+
         notifyListeners();
         return true;
       } else {
@@ -176,6 +182,9 @@ bool get isPemilik => userRole == "pemilik";
     await prefs.clear();
     user = null;
     isLoading = false;
+    
+    SocketService().disconnect();
+    
     notifyListeners();
   }
 
@@ -193,6 +202,7 @@ Future<void> loadSession() async {
     if (data != null) {
       user = jsonDecode(data);
       print('📱 User loaded successfully: ${user?["name"]}'); // ✅ Debug
+      _initSocket();
       notifyListeners();
     } else {
       print('📱 User data is null!'); // ✅ Debug
@@ -205,5 +215,16 @@ Future<void> loadSession() async {
   void clearError() {
     errorMessage = null;
     notifyListeners();
+  }
+
+  void _initSocket() {
+    if (user != null) {
+      SocketService().connect(serverUrl: ApiConfig.socketUrl);
+      SocketService().registerUser(
+        userId: user!["id"],
+        userName: user!["name"] ?? "User",
+        role: userRole,
+      );
+    }
   }
 }

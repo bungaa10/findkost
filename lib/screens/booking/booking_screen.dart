@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import '../../providers/auth_provider.dart';
 import '../../providers/kost_provider.dart';
 import '../../services/socket_service.dart';
 import '../../services/notification_service.dart';
+import '../../config/api_config.dart';
 
 class BookingScreen extends StatefulWidget {
   final int kostId;
@@ -24,13 +27,11 @@ class BookingScreen extends StatefulWidget {
 }
 
 class _BookingScreenState extends State<BookingScreen> {
-  // State untuk form
-  int _selectedDuration = 1; // 1, 6, 12 bulan
+  int _selectedDuration = 1;
   DateTime _selectedDate = DateTime.now().add(const Duration(days: 7));
   final TextEditingController _noteController = TextEditingController();
   bool _isLoading = false;
 
-  // State untuk chip
   bool _isSelected1Bulan = true;
   bool _isSelected6Bulan = false;
   bool _isSelected1Tahun = false;
@@ -83,10 +84,8 @@ class _BookingScreenState extends State<BookingScreen> {
 
   int get _totalHarga {
     if (_selectedDuration == 6) {
-      // Diskon 5% untuk 6 bulan
       return (widget.harga * _selectedDuration * 0.95).toInt();
     } else if (_selectedDuration == 12) {
-      // Diskon 10% untuk 1 tahun
       return (widget.harga * _selectedDuration * 0.9).toInt();
     }
     return widget.harga * _selectedDuration;
@@ -100,56 +99,71 @@ class _BookingScreenState extends State<BookingScreen> {
     final userName = authProvider.user?['name'] ?? 'Mahasiswa';
 
     if (userId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Silakan login terlebih dahulu'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      _showError('Silakan login terlebih dahulu');
       setState(() => _isLoading = false);
       return;
     }
 
-    // Dapatkan owner_id dari kost
     final kostProvider = Provider.of<KostProvider>(context, listen: false);
     final kost = kostProvider.kosts.firstWhere(
       (k) => k.id == widget.kostId,
       orElse: () => throw Exception('Kost tidak ditemukan'),
     );
-    final ownerId = kost.ownerId;
 
-    // Data booking
-    final bookingData = {
-      'kost_id': widget.kostId,
-      'user_id': userId,
-      'owner_id': ownerId,
-      'nama_kost': widget.namaKost,
-      'harga': widget.harga,
-      'total_harga': _totalHarga,
-      'durasi_bulan': _selectedDuration,
-      'tanggal_masuk': _selectedDate.toIso8601String().split('T')[0],
-      'catatan': _noteController.text,
-      'status': 'pending',
-    };
+    final ownerId = kost.ownerId;
+    final ownerName = kost.ownerName;
+
+    final tanggalMasuk =
+        '${_selectedDate.year}-${_selectedDate.month.toString().padLeft(2, '0')}-${_selectedDate.day.toString().padLeft(2, '0')}';
+
+    // ✅ DEBUG PRINT: Cek data sebelum dikirim
+    print('========== DATA YANG DIKIRIM ==========');
+    print('kost_id: ${widget.kostId}');
+    print('kost_name: ${widget.namaKost}');
+    print('user_id: $userId');
+    print('user_name: $userName');
+    print('owner_id: $ownerId');
+    print('owner_name: $ownerName');
+    print('durasi_bulan: $_selectedDuration');
+    print('total_harga: $_totalHarga');
+    print('tanggal_masuk: $tanggalMasuk');
+    print('catatan: ${_noteController.text}');
+    print('========================================');
 
     try {
-      // Simpan ke database
-      final response = await _saveBookingToDatabase(bookingData);
+      final response = await http.post(
+        Uri.parse(ApiConfig.createBooking),
+        body: {
+          'kost_id': widget.kostId.toString(),
+          'kost_name': widget.namaKost,
+          'user_id': userId.toString(),
+          'user_name': userName,
+          'owner_id': ownerId.toString(),
+          'owner_name': ownerName,
+          'durasi_bulan': _selectedDuration.toString(),
+          'total_harga': _totalHarga.toString(),
+          'tanggal_masuk': tanggalMasuk,
+          'catatan': _noteController.text,
+        },
+      );
 
-      if (response['success'] == true) {
-        // Kirim notifikasi realtime ke pemilik kost
+      print('📝 Response status: ${response.statusCode}');
+      print('📝 Response body: ${response.body}');
+
+      final responseData = jsonDecode(response.body);
+
+      if (responseData['success'] == true) {
         SocketService().sendBookingNotification(
           kostId: widget.kostId,
           kostName: widget.namaKost,
           ownerId: ownerId,
           studentName: userName,
-          bookingId: response['booking_id'],
+          bookingId: responseData['booking_id'] ?? 0,
           message: '$userName ingin booking ${widget.namaKost}',
         );
 
-        // Tampilkan notifikasi lokal untuk mahasiswa
         await NotificationService().showNotification(
-          id: DateTime.now().millisecondsSinceEpoch,
+          id: DateTime.now().millisecondsSinceEpoch ~/ 1000,
           title: 'Booking Berhasil!',
           body: 'Pesanan Anda untuk ${widget.namaKost} telah dikirim',
         );
@@ -157,7 +171,9 @@ class _BookingScreenState extends State<BookingScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('✓ Booking berhasil! Pemilik kost akan segera menghubungi Anda.'),
+              content: Text(
+                '✓ Booking berhasil! Pemilik kost akan segera menghubungi Anda.',
+              ),
               backgroundColor: Colors.green,
               behavior: SnackBarBehavior.floating,
             ),
@@ -165,35 +181,24 @@ class _BookingScreenState extends State<BookingScreen> {
           Navigator.pop(context, true);
         }
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(response['message'] ?? 'Gagal melakukan booking'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        _showError(responseData['message'] ?? 'Gagal melakukan booking');
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      print('❌ Booking error: $e');
+      _showError('Error: $e');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  Future<Map<String, dynamic>> _saveBookingToDatabase(Map<String, dynamic> bookingData) async {
-    // TODO: Implement API call ke backend PHP
-    // return await ApiService.post('bookings/store.php', bookingData);
-    
-    // Simulasi response (ganti dengan API call asli)
-    await Future.delayed(const Duration(seconds: 1));
-    return {
-      'success': true,
-      'booking_id': DateTime.now().millisecondsSinceEpoch,
-    };
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
   @override
@@ -202,7 +207,6 @@ class _BookingScreenState extends State<BookingScreen> {
       backgroundColor: const Color(0xffF8FAFC),
       body: CustomScrollView(
         slivers: [
-          // ==================== HEADER GRADIENT ====================
           SliverAppBar(
             expandedHeight: 180,
             pinned: true,
@@ -213,7 +217,11 @@ class _BookingScreenState extends State<BookingScreen> {
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [Color(0xff1E3A8A), Color(0xff3B82F6), Color(0xff60A5FA)],
+                    colors: [
+                      Color(0xff1E3A8A),
+                      Color(0xff3B82F6),
+                      Color(0xff60A5FA),
+                    ],
                   ),
                   borderRadius: BorderRadius.only(
                     bottomLeft: Radius.circular(30),
@@ -232,7 +240,10 @@ class _BookingScreenState extends State<BookingScreen> {
                             Container(
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                border: Border.all(color: Colors.white, width: 2),
+                                border: Border.all(
+                                  color: Colors.white,
+                                  width: 2,
+                                ),
                                 boxShadow: [
                                   BoxShadow(
                                     color: Colors.black.withOpacity(0.1),
@@ -244,7 +255,11 @@ class _BookingScreenState extends State<BookingScreen> {
                               child: const CircleAvatar(
                                 radius: 24,
                                 backgroundColor: Colors.white,
-                                child: Icon(Icons.receipt_long_rounded, color: Color(0xff3B82F6), size: 28),
+                                child: Icon(
+                                  Icons.receipt_long_rounded,
+                                  color: Color(0xff3B82F6),
+                                  size: 28,
+                                ),
                               ),
                             ),
                             const SizedBox(width: 14),
@@ -262,7 +277,10 @@ class _BookingScreenState extends State<BookingScreen> {
                                   ),
                                   const SizedBox(height: 4),
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                      vertical: 4,
+                                    ),
                                     decoration: BoxDecoration(
                                       color: Colors.white.withOpacity(0.2),
                                       borderRadius: BorderRadius.circular(20),
@@ -288,15 +306,12 @@ class _BookingScreenState extends State<BookingScreen> {
               ),
             ),
           ),
-
-          // ==================== KONTEN ====================
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  /// CARD DETAIL KOST
                   Card(
                     elevation: 2,
                     shape: RoundedRectangleBorder(
@@ -314,11 +329,18 @@ class _BookingScreenState extends State<BookingScreen> {
                                 height: 50,
                                 decoration: BoxDecoration(
                                   gradient: const LinearGradient(
-                                    colors: [Color(0xff3B82F6), Color(0xff60A5FA)],
+                                    colors: [
+                                      Color(0xff3B82F6),
+                                      Color(0xff60A5FA),
+                                    ],
                                   ),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
-                                child: const Icon(Icons.home_work, color: Colors.white, size: 28),
+                                child: const Icon(
+                                  Icons.home_work,
+                                  color: Colors.white,
+                                  size: 28,
+                                ),
                               ),
                               const SizedBox(width: 12),
                               Expanded(
@@ -336,12 +358,19 @@ class _BookingScreenState extends State<BookingScreen> {
                                     const SizedBox(height: 4),
                                     Row(
                                       children: [
-                                        Icon(Icons.location_on, size: 12, color: Colors.grey[400]),
+                                        Icon(
+                                          Icons.location_on,
+                                          size: 12,
+                                          color: Colors.grey[400],
+                                        ),
                                         const SizedBox(width: 4),
                                         Expanded(
                                           child: Text(
                                             widget.alamat,
-                                            style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.grey[500],
+                                            ),
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
                                           ),
@@ -359,7 +388,10 @@ class _BookingScreenState extends State<BookingScreen> {
                             children: [
                               const Text(
                                 "Harga Sewa",
-                                style: TextStyle(fontSize: 14, color: Colors.grey),
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey,
+                                ),
                               ),
                               Text(
                                 "${_formatRupiah(widget.harga)} / bulan",
@@ -375,10 +407,7 @@ class _BookingScreenState extends State<BookingScreen> {
                       ),
                     ),
                   ),
-
                   const SizedBox(height: 24),
-
-                  /// FORM PEMESANAN
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
@@ -404,8 +433,6 @@ class _BookingScreenState extends State<BookingScreen> {
                           ),
                         ),
                         const SizedBox(height: 16),
-                        
-                        /// Durasi Sewa
                         const Text(
                           "Durasi Sewa",
                           style: TextStyle(
@@ -417,17 +444,26 @@ class _BookingScreenState extends State<BookingScreen> {
                         const SizedBox(height: 8),
                         Row(
                           children: [
-                            _buildDurationChip("1 Bulan", _isSelected1Bulan, () => _updateDuration(1)),
+                            _buildDurationChip(
+                              "1 Bulan",
+                              _isSelected1Bulan,
+                              () => _updateDuration(1),
+                            ),
                             const SizedBox(width: 8),
-                            _buildDurationChip("6 Bulan (Diskon 5%)", _isSelected6Bulan, () => _updateDuration(6)),
+                            _buildDurationChip(
+                              "6 Bulan (Diskon 5%)",
+                              _isSelected6Bulan,
+                              () => _updateDuration(6),
+                            ),
                             const SizedBox(width: 8),
-                            _buildDurationChip("1 Tahun (Diskon 10%)", _isSelected1Tahun, () => _updateDuration(12)),
+                            _buildDurationChip(
+                              "1 Tahun (Diskon 10%)",
+                              _isSelected1Tahun,
+                              () => _updateDuration(12),
+                            ),
                           ],
                         ),
-                        
                         const SizedBox(height: 16),
-                        
-                        /// Tanggal Masuk
                         const Text(
                           "Tanggal Masuk",
                           style: TextStyle(
@@ -440,7 +476,10 @@ class _BookingScreenState extends State<BookingScreen> {
                         GestureDetector(
                           onTap: () => _selectDate(context),
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 12,
+                            ),
                             decoration: BoxDecoration(
                               border: Border.all(color: Colors.grey[300]!),
                               borderRadius: BorderRadius.circular(12),
@@ -455,15 +494,16 @@ class _BookingScreenState extends State<BookingScreen> {
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
-                                Icon(Icons.calendar_today, size: 18, color: Colors.grey[400]),
+                                Icon(
+                                  Icons.calendar_today,
+                                  size: 18,
+                                  color: Colors.grey[400],
+                                ),
                               ],
                             ),
                           ),
                         ),
-                        
                         const SizedBox(height: 16),
-                        
-                        /// Catatan
                         const Text(
                           "Catatan (Opsional)",
                           style: TextStyle(
@@ -478,14 +518,19 @@ class _BookingScreenState extends State<BookingScreen> {
                           maxLines: 3,
                           decoration: InputDecoration(
                             hintText: "Tambahkan catatan untuk pemilik kost...",
-                            hintStyle: TextStyle(color: Colors.grey[400], fontSize: 12),
+                            hintStyle: TextStyle(
+                              color: Colors.grey[400],
+                              fontSize: 12,
+                            ),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                               borderSide: BorderSide(color: Colors.grey[300]!),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(color: Color(0xff3B82F6)),
+                              borderSide: const BorderSide(
+                                color: Color(0xff3B82F6),
+                              ),
                             ),
                             contentPadding: const EdgeInsets.all(12),
                           ),
@@ -493,16 +538,15 @@ class _BookingScreenState extends State<BookingScreen> {
                       ],
                     ),
                   ),
-
                   const SizedBox(height: 16),
-
-                  /// RINGKASAN BIAYA
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       color: const Color(0xff3B82F6).withOpacity(0.05),
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: const Color(0xff3B82F6).withOpacity(0.2)),
+                      border: Border.all(
+                        color: const Color(0xff3B82F6).withOpacity(0.2),
+                      ),
                     ),
                     child: Column(
                       children: [
@@ -511,7 +555,10 @@ class _BookingScreenState extends State<BookingScreen> {
                           children: [
                             const Text(
                               "Subtotal",
-                              style: TextStyle(fontSize: 14, color: Colors.grey),
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey,
+                              ),
                             ),
                             Text(
                               _formatRupiah(widget.harga * _selectedDuration),
@@ -519,18 +566,25 @@ class _BookingScreenState extends State<BookingScreen> {
                             ),
                           ],
                         ),
-                        if (_selectedDuration == 6 || _selectedDuration == 12) ...[
+                        if (_selectedDuration == 6 ||
+                            _selectedDuration == 12) ...[
                           const SizedBox(height: 8),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
                                 "Diskon ${_selectedDuration == 6 ? '5%' : '10%'}",
-                                style: const TextStyle(fontSize: 14, color: Colors.green),
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.green,
+                                ),
                               ),
                               Text(
                                 "-${_formatRupiah((widget.harga * _selectedDuration) - _totalHarga)}",
-                                style: const TextStyle(fontSize: 14, color: Colors.green),
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.green,
+                                ),
                               ),
                             ],
                           ),
@@ -560,10 +614,7 @@ class _BookingScreenState extends State<BookingScreen> {
                       ],
                     ),
                   ),
-
                   const SizedBox(height: 24),
-
-                  /// TOMBOL KONFIRMASI
                   Container(
                     width: double.infinity,
                     height: 55,
@@ -593,7 +644,9 @@ class _BookingScreenState extends State<BookingScreen> {
                               height: 24,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.white,
+                                ),
                               ),
                             )
                           : const Text(
@@ -605,7 +658,6 @@ class _BookingScreenState extends State<BookingScreen> {
                             ),
                     ),
                   ),
-
                   const SizedBox(height: 40),
                 ],
               ),

@@ -109,6 +109,7 @@ class _KostFormScreenState extends State<KostFormScreen> {
     final kost = KostModel(
       id: widget.kost?.id,
       namaKost: _namaController.text,
+      ownerName: widget.kost?.ownerName ?? '',
       harga: int.parse(_hargaController.text),
       alamat: _alamatController.text,
       fasilitas: _facilitiesString, // ✅ Gunakan facilities string dari chip

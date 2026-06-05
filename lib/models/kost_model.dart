@@ -2,6 +2,7 @@ class KostModel {
   final int? id;
   final int ownerId;
   final String namaKost;
+  final String ownerName;
   final int harga;
   final String alamat;
   final String fasilitas;
@@ -14,6 +15,7 @@ class KostModel {
     this.id,
     required this.ownerId,
     required this.namaKost,
+    required this.ownerName,
     required this.harga,
     required this.alamat,
     this.fasilitas = '',
@@ -31,6 +33,8 @@ class KostModel {
       
       // Konversi owner_id dengan aman
       ownerId: _parseInt(json['owner_id'], defaultValue: 1),
+      
+      ownerName: json['owner_name']?.toString() ?? '',
       
       namaKost: json['nama_kost']?.toString() ?? '',
       
@@ -94,11 +98,13 @@ class KostModel {
     String? deskripsi,
     String? kategori,
     String? foto,
+    String? ownerName,
   }) {
     return KostModel(
       id: id ?? this.id,
       ownerId: ownerId ?? this.ownerId,
       namaKost: namaKost ?? this.namaKost,
+      ownerName: ownerName ?? this.ownerName,
       harga: harga ?? this.harga,
       alamat: alamat ?? this.alamat,
       fasilitas: fasilitas ?? this.fasilitas,

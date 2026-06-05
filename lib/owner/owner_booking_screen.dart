@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../services/socket_service.dart';
 import '../../services/notification_service.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/booking_provider.dart';
 
 class OwnerBookingScreen extends StatefulWidget {
   const OwnerBookingScreen({super.key});
@@ -24,22 +25,18 @@ class _OwnerBookingScreenState extends State<OwnerBookingScreen> {
   }
 
   void _setupSocketListener() {
-    // Setup listener notifikasi booking dari Socket.IO
     SocketService().onBookingNotification = (data) async {
       print('📨 Booking notification received: $data');
-      
-      // Tampilkan notifikasi lokal di HP
+
       await NotificationService().showNotification(
-        id: DateTime.now().millisecondsSinceEpoch,
+        id: DateTime.now().millisecondsSinceEpoch ~/ 1000,
         title: '📢 Booking Baru!',
         body: '${data['studentName']} memesan ${data['kostName']}',
         payload: 'booking_id:${data['bookingId']}',
       );
-      
-      // Refresh list booking
+
       _loadBookings();
-      
-      // Tampilkan snackbar jika halaman sedang terbuka
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -73,7 +70,7 @@ class _OwnerBookingScreenState extends State<OwnerBookingScreen> {
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final ownerId = authProvider.user?['id'];
-      
+
       if (ownerId == null) {
         setState(() {
           _errorMessage = 'User tidak ditemukan';
@@ -82,100 +79,84 @@ class _OwnerBookingScreenState extends State<OwnerBookingScreen> {
         return;
       }
 
-      // TODO: Panggil API get bookings untuk pemilik
-      // final response = await ApiService.get('bookings/owner.php?owner_id=$ownerId');
-      // _bookings = List<Map<String, dynamic>>.from(response['data']);
-      
-      // Data dummy untuk testing (hapus setelah API jadi)
-      await Future.delayed(const Duration(seconds: 1));
-      _bookings = [
-        {
-          'id': 1,
-          'kost_id': 1,
-          'kost_name': 'Kost Indah Permata',
-          'student_name': 'Bunga Arini',
-          'student_email': 'bunga@example.com',
-          'duration': 6,
-          'total_price': 5100000,
-          'check_in_date': '2026-06-15',
-          'note': 'Saya mahasiswa baru, mohon bantuannya',
-          'status': 'pending',
-          'created_at': '2026-06-01 10:30:00',
-        },
-        {
-          'id': 2,
-          'kost_id': 2,
-          'kost_name': 'Kost Mawar Berseri',
-          'student_name': 'Akbar Maulana',
-          'student_email': 'akbar@example.com',
-          'duration': 12,
-          'total_price': 9000000,
-          'check_in_date': '2026-07-01',
-          'note': '',
-          'status': 'pending',
-          'created_at': '2026-06-02 09:15:00',
-        },
-      ];
-      
-    } catch (e) {
-      setState(() {
-        _errorMessage = 'Gagal memuat booking: $e';
-      });
-    } finally {
+      final bookingProvider = Provider.of<BookingProvider>(
+        context,
+        listen: false,
+      );
+      await bookingProvider.getOwnerBookings(int.parse(ownerId.toString()));
+
       if (mounted) {
         setState(() {
+          _bookings = bookingProvider.ownerBookings
+              .map(
+                (b) => {
+                  'id': b.id,
+                  'kost_id': b.kostId,
+                  'kost_name': b.kostName,
+                  'student_name': b.userName,
+                  'duration': b.durasiBulan,
+                  'total_price': b.totalHarga,
+                  'check_in_date':
+                      '${b.tanggalMasuk.year}-${b.tanggalMasuk.month.toString().padLeft(2, '0')}-${b.tanggalMasuk.day.toString().padLeft(2, '0')}',
+                  'note': b.catatan ?? '',
+                  'status': b.status,
+                  'created_at':
+                      '${b.createdAt.day}/${b.createdAt.month}/${b.createdAt.year} ${b.createdAt.hour}:${b.createdAt.minute}',
+                },
+              )
+              .toList();
           _isLoading = false;
         });
       }
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Gagal memuat booking: $e';
+        _isLoading = false;
+      });
     }
   }
 
   Future<void> _updateBookingStatus(int bookingId, String newStatus) async {
-    // Tampilkan loading dialog
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => const Center(
-        child: CircularProgressIndicator(),
-      ),
+      builder: (context) => const Center(child: CircularProgressIndicator()),
     );
 
     try {
-      // TODO: Panggil API update status booking
-      // final response = await ApiService.post('bookings/update_status.php', {
-      //   'booking_id': bookingId,
-      //   'status': newStatus,
-      // });
-      
-      await Future.delayed(const Duration(seconds: 1));
-      
-      // Update local list
-      setState(() {
-        final index = _bookings.indexWhere((b) => b['id'] == bookingId);
-        if (index != -1) {
-          _bookings[index]['status'] = newStatus;
+      final bookingProvider = Provider.of<BookingProvider>(
+        context,
+        listen: false,
+      );
+      final success = await bookingProvider.updateStatus(bookingId, newStatus);
+
+      if (success) {
+        await _loadBookings();
+
+        if (mounted) {
+          Navigator.pop(context);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Booking berhasil di${newStatus == 'confirmed' ? 'terima' : 'tolak'}',
+              ),
+              backgroundColor: Colors.green,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
         }
-      });
-      
-      // Kirim notifikasi ke mahasiswa via Socket
-      // SocketService().sendBookingStatusUpdate(
-      //   bookingId: bookingId,
-      //   studentId: studentId,
-      //   status: newStatus,
-      //   message: newStatus == 'diterima' 
-      //       ? 'Booking Anda telah diterima!' 
-      //       : 'Mohon maaf, booking Anda ditolak.',
-      // );
-      
-      if (mounted) {
-        Navigator.pop(context); // Tutup dialog
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Booking berhasil di${newStatus == 'diterima' ? 'terima' : 'tolak'}'),
-            backgroundColor: Colors.green,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+      } else {
+        if (mounted) {
+          Navigator.pop(context);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                bookingProvider.errorMessage ?? 'Gagal update status',
+              ),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -191,6 +172,8 @@ class _OwnerBookingScreenState extends State<OwnerBookingScreen> {
   }
 
   void _showBookingDetail(Map<String, dynamic> booking) {
+    final isPending = booking['status'] == 'pending';
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -225,7 +208,11 @@ class _OwnerBookingScreenState extends State<OwnerBookingScreen> {
                     color: const Color(0xff3B82F6).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(Icons.receipt_long, color: Color(0xff3B82F6), size: 28),
+                  child: const Icon(
+                    Icons.receipt_long,
+                    color: Color(0xff3B82F6),
+                    size: 28,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -251,16 +238,19 @@ class _OwnerBookingScreenState extends State<OwnerBookingScreen> {
             ),
             const Divider(height: 30),
             _detailRow('Nama Mahasiswa', booking['student_name']),
-            _detailRow('Email', booking['student_email']),
             _detailRow('Tanggal Masuk', booking['check_in_date']),
             _detailRow('Durasi Sewa', '${booking['duration']} bulan'),
-            _detailRow('Total Harga', 'Rp ${booking['total_price'].toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (match) => '${match[1]}.')}'),
+            _detailRow('Total Harga', _formatRupiah(booking['total_price'])),
             _detailRow('Tanggal Booking', booking['created_at']),
-            if (booking['note'].isNotEmpty) ...[
+            if (booking['note'].toString().isNotEmpty) ...[
               const SizedBox(height: 8),
               const Text(
                 'Catatan',
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.grey),
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey,
+                ),
               ),
               const SizedBox(height: 4),
               Container(
@@ -276,14 +266,14 @@ class _OwnerBookingScreenState extends State<OwnerBookingScreen> {
               ),
             ],
             const SizedBox(height: 24),
-            if (booking['status'] == 'pending') ...[
+            if (isPending) ...[
               Row(
                 children: [
                   Expanded(
                     child: ElevatedButton.icon(
                       onPressed: () {
                         Navigator.pop(context);
-                        _updateBookingStatus(booking['id'], 'diterima');
+                        _updateBookingStatus(booking['id'], 'confirmed');
                       },
                       icon: const Icon(Icons.check_circle, size: 18),
                       label: const Text('Terima'),
@@ -302,7 +292,7 @@ class _OwnerBookingScreenState extends State<OwnerBookingScreen> {
                     child: ElevatedButton.icon(
                       onPressed: () {
                         Navigator.pop(context);
-                        _updateBookingStatus(booking['id'], 'ditolak');
+                        _updateBookingStatus(booking['id'], 'cancelled');
                       },
                       icon: const Icon(Icons.cancel, size: 18),
                       label: const Text('Tolak'),
@@ -318,7 +308,7 @@ class _OwnerBookingScreenState extends State<OwnerBookingScreen> {
                   ),
                 ],
               ),
-            ] else if (booking['status'] == 'diterima') ...[
+            ] else if (booking['status'] == 'confirmed') ...[
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
@@ -332,14 +322,17 @@ class _OwnerBookingScreenState extends State<OwnerBookingScreen> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'Booking telah diterima. Silakan hubungi mahasiswa untuk konfirmasi lebih lanjut.',
-                        style: TextStyle(color: Colors.green[700], fontSize: 12),
+                        'Booking telah diterima.',
+                        style: TextStyle(
+                          color: Colors.green[700],
+                          fontSize: 12,
+                        ),
                       ),
                     ),
                   ],
                 ),
               ),
-            ] else if (booking['status'] == 'ditolak') ...[
+            ] else if (booking['status'] == 'cancelled') ...[
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
@@ -375,7 +368,7 @@ class _OwnerBookingScreenState extends State<OwnerBookingScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 100,
+            width: 110,
             child: Text(
               label,
               style: TextStyle(fontSize: 12, color: Colors.grey[600]),
@@ -392,20 +385,27 @@ class _OwnerBookingScreenState extends State<OwnerBookingScreen> {
     );
   }
 
+  String _formatRupiah(dynamic harga) {
+    final nominal = harga is int
+        ? harga
+        : double.parse(harga.toString()).toInt();
+    return 'Rp ${nominal.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (match) => '${match[1]}.')}';
+  }
+
   Widget _buildStatusBadge(String status) {
     Color color;
     String label;
-    
+
     switch (status) {
       case 'pending':
         color = Colors.orange;
         label = 'Pending';
         break;
-      case 'diterima':
+      case 'confirmed':
         color = Colors.green;
         label = 'Diterima';
         break;
-      case 'ditolak':
+      case 'cancelled':
         color = Colors.red;
         label = 'Ditolak';
         break;
@@ -413,7 +413,7 @@ class _OwnerBookingScreenState extends State<OwnerBookingScreen> {
         color = Colors.grey;
         label = status;
     }
-    
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
@@ -462,139 +462,149 @@ class _OwnerBookingScreenState extends State<OwnerBookingScreen> {
               ),
             )
           : _errorMessage != null
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
-                      const SizedBox(height: 16),
-                      Text(_errorMessage!),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: _loadBookings,
-                        child: const Text("Coba Lagi"),
-                      ),
-                    ],
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
+                  const SizedBox(height: 16),
+                  Text(_errorMessage!),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: _loadBookings,
+                    child: const Text("Coba Lagi"),
                   ),
-                )
-              : _bookings.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.inbox_outlined, size: 80, color: Colors.grey[300]),
-                          const SizedBox(height: 16),
-                          const Text(
-                            "Belum ada pesanan",
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            "Pesanan dari mahasiswa akan muncul di sini",
-                            style: TextStyle(color: Colors.grey[500]),
-                          ),
-                        ],
-                      ),
-                    )
-                  : RefreshIndicator(
-                      onRefresh: _loadBookings,
-                      child: ListView.builder(
-                        padding: const EdgeInsets.all(16),
-                        itemCount: _bookings.length,
-                        itemBuilder: (context, index) {
-                          final booking = _bookings[index];
-                          return Container(
-                            margin: const EdgeInsets.only(bottom: 16),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(16),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.04),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            child: Material(
-                              color: Colors.transparent,
-                              child: InkWell(
-                                onTap: () => _showBookingDetail(booking),
-                                borderRadius: BorderRadius.circular(16),
-                                child: Padding(
-                                  padding: const EdgeInsets.all(16),
-                                  child: Column(
-                                    children: [
-                                      Row(
-                                        children: [
-                                          Container(
-                                            width: 50,
-                                            height: 50,
-                                            decoration: BoxDecoration(
-                                              color: const Color(0xff3B82F6).withOpacity(0.1),
-                                              borderRadius: BorderRadius.circular(12),
-                                            ),
-                                            child: const Icon(
-                                              Icons.home_work,
-                                              color: Color(0xff3B82F6),
-                                              size: 28,
-                                            ),
-                                          ),
-                                          const SizedBox(width: 12),
-                                          Expanded(
-                                            child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                              children: [
-                                                Text(
-                                                  booking['kost_name'],
-                                                  style: const TextStyle(
-                                                    fontSize: 14,
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                ),
-                                                const SizedBox(height: 4),
-                                                Text(
-                                                  '${booking['student_name']} • ${booking['duration']} bulan',
-                                                  style: TextStyle(
-                                                    fontSize: 11,
-                                                    color: Colors.grey[500],
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                          _buildStatusBadge(booking['status']),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 12),
-                                      Row(
-                                        children: [
-                                          Icon(Icons.calendar_today, size: 12, color: Colors.grey[400]),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            'Masuk: ${booking['check_in_date']}',
-                                            style: TextStyle(fontSize: 11, color: Colors.grey[500]),
-                                          ),
-                                          const Spacer(),
-                                          Text(
-                                            'Rp ${booking['total_price'].toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (match) => '${match[1]}.')}',
-                                            style: const TextStyle(
-                                              fontSize: 13,
-                                              fontWeight: FontWeight.bold,
-                                              color: Color(0xff3B82F6),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
+                ],
+              ),
+            )
+          : _bookings.isEmpty
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.inbox_outlined, size: 80, color: Colors.grey[300]),
+                  const SizedBox(height: 16),
+                  const Text(
+                    "Belum ada pesanan",
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    "Pesanan dari mahasiswa akan muncul di sini",
+                    style: TextStyle(color: Colors.grey[500]),
+                  ),
+                ],
+              ),
+            )
+          : RefreshIndicator(
+              onRefresh: _loadBookings,
+              child: ListView.builder(
+                padding: const EdgeInsets.all(16),
+                itemCount: _bookings.length,
+                itemBuilder: (context, index) {
+                  final booking = _bookings[index];
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.04),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () => _showBookingDetail(booking),
+                        borderRadius: BorderRadius.circular(16),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            children: [
+                              Row(
+                                children: [
+                                  Container(
+                                    width: 50,
+                                    height: 50,
+                                    decoration: BoxDecoration(
+                                      color: const Color(
+                                        0xff3B82F6,
+                                      ).withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: const Icon(
+                                      Icons.home_work,
+                                      color: Color(0xff3B82F6),
+                                      size: 28,
+                                    ),
                                   ),
-                                ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          booking['kost_name'],
+                                          style: const TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          '${booking['student_name']} • ${booking['duration']} bulan',
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            color: Colors.grey[500],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  _buildStatusBadge(booking['status']),
+                                ],
                               ),
-                            ),
-                          );
-                        },
+                              const SizedBox(height: 12),
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.calendar_today,
+                                    size: 12,
+                                    color: Colors.grey[400],
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'Masuk: ${booking['check_in_date']}',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: Colors.grey[500],
+                                    ),
+                                  ),
+                                  const Spacer(),
+                                  Text(
+                                    _formatRupiah(booking['total_price']),
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xff3B82F6),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
+                  );
+                },
+              ),
+            ),
     );
   }
 }
