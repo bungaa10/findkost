@@ -1,0 +1,130 @@
+import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import '../models/kost_model.dart';
+
+class KostProvider extends ChangeNotifier {
+  List<KostModel> _kosts = [];
+  bool _isLoading = false;
+  String? _errorMessage;
+
+  List<KostModel> get kosts => _kosts;
+  bool get isLoading => _isLoading;
+  String? get errorMessage => _errorMessage;
+
+  final String baseUrl = 'http://192.168.1.46/findkost_api/kost'; // Sesuaikan
+
+  // READ
+  Future<void> fetchKost() async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/index.php'));
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        _kosts = data.map((json) => KostModel.fromJson(json)).toList();
+      } else {
+        _errorMessage = 'Gagal memuat data';
+      }
+    } catch (e) {
+      _errorMessage = 'Error: $e';
+    }
+
+    _isLoading = false;
+    notifyListeners();
+  }
+
+  // CREATE
+  Future<bool> createKost(KostModel kost) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/store.php'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode(kost.toJson()),
+      );
+
+      final result = json.decode(response.body);
+
+      if (result['success'] == true) {
+        await fetchKost(); // Refresh list
+        return true;
+      } else {
+        _errorMessage = result['message'] ?? 'Gagal menambah kost';
+        return false;
+      }
+    } catch (e) {
+      _errorMessage = 'Error: $e';
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  // UPDATE
+  Future<bool> updateKost(KostModel kost) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      final response = await http.put(
+        Uri.parse('$baseUrl/update.php'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'id': kost.id, ...kost.toJson()}),
+      );
+
+      final result = json.decode(response.body);
+
+      if (result['success'] == true) {
+        await fetchKost();
+        return true;
+      } else {
+        _errorMessage = result['message'] ?? 'Gagal mengupdate kost';
+        return false;
+      }
+    } catch (e) {
+      _errorMessage = 'Error: $e';
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  // DELETE
+  Future<bool> deleteKost(int id) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      final response = await http.delete(
+        Uri.parse('$baseUrl/delete.php'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'id': id}),
+      );
+
+      final result = json.decode(response.body);
+
+      if (result['success'] == true) {
+        _kosts.removeWhere((kost) => kost.id == id);
+        notifyListeners();
+        return true;
+      } else {
+        _errorMessage = result['message'] ?? 'Gagal menghapus kost';
+        return false;
+      }
+    } catch (e) {
+      _errorMessage = 'Error: $e';
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+}
