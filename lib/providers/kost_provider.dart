@@ -11,9 +11,9 @@ class KostProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
 
-  final String baseUrl = 'http://192.168.0.107/findkost_api/kost'; // Sesuaikan
+  final String baseUrl = 'http://192.168.0.107/findkost_api/kost';
 
-  Future<void> fetchKost() async {
+  Future<void> fetchKost() async { //Ambil semua data kost dari MySQL menggunakan API (async)
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
@@ -35,7 +35,7 @@ class KostProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<bool> createKost(KostModel kost) async {
+  Future<bool> createKost(KostModel kost) async {  //implementasi create kost dengan API (async)
     _isLoading = true;
     notifyListeners();
 
@@ -64,7 +64,7 @@ class KostProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> updateKost(KostModel kost) async {
+  Future<bool> updateKost(KostModel kost) async {  //implementasi update kost dengan API (async)
     _isLoading = true;
     notifyListeners();
 
@@ -93,7 +93,7 @@ class KostProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> deleteKost(int id) async {
+  Future<bool> deleteKost(int id) async { //implementasi delete kost dengan API (async)
     _isLoading = true;
     notifyListeners();
 

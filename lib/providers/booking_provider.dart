@@ -103,8 +103,7 @@ class BookingProvider extends ChangeNotifier {
     }
   }
 
-  // Update booking status
-  Future<bool> updateStatus(int bookingId, String status) async {
+  Future<bool> updateStatus(int bookingId, String status) async { //implementasi update status booking dengan API (async)
     isLoading = true;
     notifyListeners();
 

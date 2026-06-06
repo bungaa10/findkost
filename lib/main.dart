@@ -10,11 +10,8 @@ import 'services/notification_service.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
-
   await NotificationService().init();
   await NotificationService().requestPermission();
-
-  print('🟢 main() called');
   runApp(const MyApp());
 }
 
@@ -23,7 +20,6 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    print('🟢 MyApp build called');
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
