@@ -18,10 +18,8 @@ class AuthProvider extends ChangeNotifier {
   bool isLoading = false;
   String? errorMessage;
   bool _initialized = false;
-
   bool get isLogin => user != null;
 
-  // Constructor
   AuthProvider() {
     _firebaseAuth.authStateChanges().listen((User? firebaseUser) {
       if (firebaseUser == null && user != null) {
@@ -39,21 +37,19 @@ class AuthProvider extends ChangeNotifier {
     await _googleSignIn.attemptLightweightAuthentication();
   }
 
-  // ==================== LOGIN MANUAL ====================
-// ✅ UPDATE dengan parameter role
 Future<bool> login(String email, String password, String role) async {
   isLoading = true;
   errorMessage = null;
   notifyListeners();
 
   try {
-    final response = await _authService.login(email, password, role); // ← kirim role
+    final response = await _authService.login(email, password, role); 
 
-    print('📝 Login response: $response');
+    print(' Login response: $response');
 
     if (response["success"] == true) {
       user = response["user"];
-      print('👤 User role: ${user?["role"]}');
+      print(' User role: ${user?["role"]}');
       
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool("isLogin", true);
@@ -78,18 +74,16 @@ Future<bool> login(String email, String password, String role) async {
   }
 }
 
-// ✅ Tambahkan getter role
 String get userRole => user?["role"] ?? "mahasiswa";
 bool get isPemilik => userRole == "pemilik";
 
-  // ==================== LOGIN DENGAN GOOGLE ====================
   Future<bool> signInWithGoogle() async {
     isLoading = true;
     errorMessage = null;
     notifyListeners();
 
     try {
-      // 1. Authenticate dengan Google
+      
       final GoogleSignInAccount? googleUser = await _googleSignIn.authenticate();
 
       if (googleUser == null) {
@@ -98,7 +92,6 @@ bool get isPemilik => userRole == "pemilik";
         return false;
       }
 
-      // 2. Dapatkan idToken
       final String? idToken = await googleUser.authentication.idToken;
 
       if (idToken == null) {
@@ -108,7 +101,6 @@ bool get isPemilik => userRole == "pemilik";
         return false;
       }
 
-      // 3. Login ke Firebase
       final AuthCredential credential = GoogleAuthProvider.credential(
         idToken: idToken,
       );
@@ -122,7 +114,6 @@ bool get isPemilik => userRole == "pemilik";
         return false;
       }
 
-      // 4. Kirim token ke backend PHP
       debugPrint("Mencoba kirim token ke PHP: ${ApiConfig.googleLogin}");
 
       final response = await http.post(
@@ -136,7 +127,6 @@ bool get isPemilik => userRole == "pemilik";
       final responseData = json.decode(response.body);
 
       if (responseData["success"] == true) {
-        // 5. Simpan data user ke SharedPreferences
         user = {
           "id": responseData["user_id"],
           "name": firebaseUser.displayName ?? googleUser.displayName,
@@ -166,7 +156,6 @@ bool get isPemilik => userRole == "pemilik";
     }
   }
 
-  // ==================== LOGOUT ====================
   Future<void> logout() async {
     isLoading = true;
     notifyListeners();
@@ -188,27 +177,25 @@ bool get isPemilik => userRole == "pemilik";
     notifyListeners();
   }
 
-  // ==================== LOAD SESSION ====================
-  // ==================== LOAD SESSION ====================
 Future<void> loadSession() async {
   final prefs = await SharedPreferences.getInstance();
   bool login = prefs.getBool("isLogin") ?? false;
   
-  print('📱 loadSession called, login from prefs: $login'); // ✅ Debug
+  print('📱 loadSession called, login from prefs: $login'); 
 
   if (login) {
     String? data = prefs.getString("user");
-    print('📱 User data from prefs: $data'); // ✅ Debug
+    print('📱 User data from prefs: $data'); 
     if (data != null) {
       user = jsonDecode(data);
-      print('📱 User loaded successfully: ${user?["name"]}'); // ✅ Debug
+      print('📱 User loaded successfully: ${user?["name"]}'); 
       _initSocket();
       notifyListeners();
     } else {
-      print('📱 User data is null!'); // ✅ Debug
+      print('📱 User data is null!'); 
     }
   } else {
-    print('📱 User not logged in'); // ✅ Debug
+    print('📱 User not logged in'); 
   }
 }
 

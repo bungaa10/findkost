@@ -10,7 +10,6 @@ class BookingProvider extends ChangeNotifier {
   bool isLoading = false;
   String? errorMessage;
 
-  // Get my bookings (for student)
   Future<void> getMyBookings(int userId) async {
     isLoading = true;
     errorMessage = null;
@@ -34,7 +33,6 @@ class BookingProvider extends ChangeNotifier {
     }
   }
 
-  // Get owner bookings (for owner)
   Future<void> getOwnerBookings(int ownerId) async {
     isLoading = true;
     errorMessage = null;
@@ -58,7 +56,6 @@ class BookingProvider extends ChangeNotifier {
     }
   }
 
-  // Create new booking
   Future<bool> createBooking({
     required int kostId,
     required String kostName,

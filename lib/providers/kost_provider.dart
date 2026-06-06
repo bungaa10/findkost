@@ -7,14 +7,12 @@ class KostProvider extends ChangeNotifier {
   List<KostModel> _kosts = [];
   bool _isLoading = false;
   String? _errorMessage;
-
   List<KostModel> get kosts => _kosts;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
 
   final String baseUrl = 'http://192.168.0.107/findkost_api/kost'; // Sesuaikan
 
-  // READ
   Future<void> fetchKost() async {
     _isLoading = true;
     _errorMessage = null;
@@ -37,7 +35,6 @@ class KostProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // CREATE
   Future<bool> createKost(KostModel kost) async {
     _isLoading = true;
     notifyListeners();
@@ -52,7 +49,7 @@ class KostProvider extends ChangeNotifier {
       final result = json.decode(response.body);
 
       if (result['success'] == true) {
-        await fetchKost(); // Refresh list
+        await fetchKost(); 
         return true;
       } else {
         _errorMessage = result['message'] ?? 'Gagal menambah kost';
@@ -67,7 +64,6 @@ class KostProvider extends ChangeNotifier {
     }
   }
 
-  // UPDATE
   Future<bool> updateKost(KostModel kost) async {
     _isLoading = true;
     notifyListeners();
@@ -97,7 +93,6 @@ class KostProvider extends ChangeNotifier {
     }
   }
 
-  // DELETE
   Future<bool> deleteKost(int id) async {
     _isLoading = true;
     notifyListeners();
