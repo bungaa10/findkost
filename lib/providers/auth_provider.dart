@@ -12,7 +12,7 @@ import '../services/socket_service.dart';
 class AuthProvider extends ChangeNotifier {
   final AuthService _authService = AuthService();
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
-  final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
+  final GoogleSignIn _googleSignIn = GoogleSignIn.instance; //login google
 
   Map<String, dynamic>? user;
   bool isLoading = false;
@@ -50,7 +50,7 @@ Future<bool> login(String email, String password, String role) async {
     if (response["success"] == true) {
       user = response["user"];
       print(' User role: ${user?["role"]}');
-      
+      //penggunaan shared preferences untuk menyimpan data login secara lokal
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool("isLogin", true);
       await prefs.setString("user", jsonEncode(user));
