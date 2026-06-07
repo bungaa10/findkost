@@ -8,6 +8,7 @@ import 'package:http/http.dart' as http;
 import '../services/auth_service.dart';
 import '../config/api_config.dart';
 import '../services/socket_service.dart';
+import '../services/notification_service.dart';
 
 class AuthProvider extends ChangeNotifier {
   final AuthService _authService = AuthService();
@@ -52,6 +53,7 @@ Future<bool> login(String email, String password, String role) async {
       await prefs.setString("user", jsonEncode(user));
       
       _initSocket();
+      await _saveFcmToken();
       
       notifyListeners();
       return true;
@@ -134,6 +136,7 @@ bool get isPemilik => userRole == "pemilik";
         await prefs.setString("user", jsonEncode(user));
 
         _initSocket();
+        await _saveFcmToken();
 
         notifyListeners();
         return true;
@@ -183,6 +186,7 @@ Future<void> loadSession() async {
       user = jsonDecode(data);
       print('📱 User loaded successfully: ${user?["name"]}'); 
       _initSocket();
+      _saveFcmToken();
       notifyListeners();
     } else {
       print('📱 User data is null!'); 
@@ -210,6 +214,26 @@ Future<void> loadSession() async {
       };
       
       SocketService().connect(serverUrl: ApiConfig.socketUrl);
+    }
+  }
+
+  Future<void> _saveFcmToken() async {
+    if (user == null) return;
+    
+    String? token = await NotificationService().getFcmToken();
+    if (token != null) {
+      try {
+        await http.post(
+          Uri.parse(ApiConfig.saveFcmToken),
+          body: {
+            "user_id": user!["id"].toString(),
+            "fcm_token": token,
+          },
+        );
+        debugPrint("FCM token saved to server: $token");
+      } catch (e) {
+        debugPrint("Failed to save FCM token: $e");
+      }
     }
   }
 }

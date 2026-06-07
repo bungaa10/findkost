@@ -17,5 +17,6 @@ class ApiConfig {
   static const String updateBooking = '$baseUrl/findkost_api/bookings/update_status.php';
   static const String myBookings = '$baseUrl/findkost_api/bookings/my_bookings.php';
   static const String ownerBookings = '$baseUrl/findkost_api/bookings/owner.php';
+  static const String saveFcmToken = '$baseUrl/findkost_api/auth/save_fcm_token.php';
 
 }
