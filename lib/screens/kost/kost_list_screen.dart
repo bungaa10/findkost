@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../providers/auth_provider.dart';
 import '../../providers/kost_provider.dart';
 import 'kost_form_screen.dart';
 
@@ -19,11 +20,22 @@ class _KostListScreenState extends State<KostListScreen> {
   static const _bgLight = Color(0xFFF0F6FF);
   static const _accent = Color(0xFF3EA8FF);
 
+  /// Helper: ambil ownerId dari AuthProvider lalu refresh list kost
+  void _refreshKost() {
+    final auth = context.read<AuthProvider>();
+    if (auth.user != null) {
+      int ownerId = auth.user!["id"] is int
+          ? auth.user!["id"]
+          : int.tryParse(auth.user!["id"].toString()) ?? 0;
+      context.read<KostProvider>().fetchKostByOwner(ownerId);
+    }
+  }
+
   @override
   void initState() {
     super.initState();
     Future.microtask(() {
-      context.read<KostProvider>().fetchKost();
+      if (mounted) _refreshKost();
     });
   }
 
@@ -172,7 +184,11 @@ class _KostListScreenState extends State<KostListScreen> {
                           MaterialPageRoute(
                             builder: (_) => const KostFormScreen(),
                           ),
-                        ).then((_) => provider.fetchKost());
+                        ).then((_) => provider.fetchKostByOwner(context.read<AuthProvider>().user != null
+                            ? (context.read<AuthProvider>().user!["id"] is int
+                                ? context.read<AuthProvider>().user!["id"]
+                                : int.tryParse(context.read<AuthProvider>().user!["id"].toString()) ?? 0)
+                            : 0));
                       },
                       icon: const Icon(Icons.add_rounded, size: 18),
                       label: isSmallScreen
@@ -247,7 +263,11 @@ class _KostListScreenState extends State<KostListScreen> {
                           ),
                           const SizedBox(height: 20),
                           ElevatedButton.icon(
-                            onPressed: () => provider.fetchKost(),
+                            onPressed: () => provider.fetchKostByOwner(context.read<AuthProvider>().user != null
+                            ? (context.read<AuthProvider>().user!["id"] is int
+                                ? context.read<AuthProvider>().user!["id"]
+                                : int.tryParse(context.read<AuthProvider>().user!["id"].toString()) ?? 0)
+                            : 0),
                             icon: const Icon(Icons.refresh_rounded),
                             label: const Text("Coba Lagi"),
                             style: ElevatedButton.styleFrom(
@@ -325,7 +345,11 @@ class _KostListScreenState extends State<KostListScreen> {
                                       builder: (_) =>
                                           KostFormScreen(kost: kost),
                                     ),
-                                  ).then((_) => provider.fetchKost());
+                                  ).then((_) => provider.fetchKostByOwner(context.read<AuthProvider>().user != null
+                            ? (context.read<AuthProvider>().user!["id"] is int
+                                ? context.read<AuthProvider>().user!["id"]
+                                : int.tryParse(context.read<AuthProvider>().user!["id"].toString()) ?? 0)
+                            : 0));
                                 },
                                 child: Container(
                                   decoration: BoxDecoration(
@@ -624,7 +648,11 @@ class _KostListScreenState extends State<KostListScreen> {
           Navigator.push(
             context,
             MaterialPageRoute(builder: (_) => const KostFormScreen()),
-          ).then((_) => provider.fetchKost());
+          ).then((_) => provider.fetchKostByOwner(context.read<AuthProvider>().user != null
+                            ? (context.read<AuthProvider>().user!["id"] is int
+                                ? context.read<AuthProvider>().user!["id"]
+                                : int.tryParse(context.read<AuthProvider>().user!["id"].toString()) ?? 0)
+                            : 0));
         },
         backgroundColor: _primary,
         elevation: 4,

@@ -1,3 +1,4 @@
+import 'package:findkost/providers/auth_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/kost_provider.dart';
@@ -106,16 +107,22 @@ class _KostFormScreenState extends State<KostFormScreen> {
 
     setState(() => _isLoading = true);
 
+    final authProvider = context.read<AuthProvider>();
+    final currentUserId = authProvider.user?['id'] is int 
+        ? authProvider.user!['id'] 
+        : int.tryParse(authProvider.user?['id']?.toString() ?? '0') ?? 0;
+    final currentUserName = authProvider.user?['name'] ?? '';
+
     final kost = KostModel(
       id: widget.kost?.id,
       namaKost: _namaController.text,
-      ownerName: widget.kost?.ownerName ?? '',
+      ownerName: widget.kost?.ownerName ?? currentUserName,
       harga: int.parse(_hargaController.text),
       alamat: _alamatController.text,
       fasilitas: _facilitiesString, // ✅ Gunakan facilities string dari chip
       deskripsi: _deskripsiController.text,
       kategori: _selectedKategori,
-      ownerId: 1,
+      ownerId: widget.kost?.ownerId ?? currentUserId,
     );
 
     final provider = context.read<KostProvider>();

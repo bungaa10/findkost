@@ -92,7 +92,7 @@ class _SplashScreenState extends State<SplashScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              "Temukan Kost Terbaik untukmu",
+              "cari kost dekat kampus dalam hitungan menit tanpa perlu keliling",
               style: TextStyle(
                 color: Colors.white.withOpacity(0.8),
                 fontSize: 14,

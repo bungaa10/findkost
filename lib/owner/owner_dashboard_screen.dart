@@ -26,22 +26,24 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
     super.initState();
     Future.microtask(() {
       if (mounted) {
-        context.read<KostProvider>().fetchKost();
-        
-        // Force register socket to ensure Owner is online
         final auth = context.read<AuthProvider>();
+
         if (auth.user != null) {
-          int parsedUserId = auth.user!["id"] is int 
-              ? auth.user!["id"] 
+          int parsedUserId = auth.user!["id"] is int
+              ? auth.user!["id"]
               : int.tryParse(auth.user!["id"].toString()) ?? 0;
-              
+
+          // Ambil hanya kost milik owner ini
+          context.read<KostProvider>().fetchKostByOwner(parsedUserId);
+
+          // Daftarkan socket agar online
           SocketService().registerUser(
             userId: parsedUserId,
             userName: auth.user!["name"] ?? "Owner",
             role: "pemilik",
           );
         }
-        
+
         _setupSocketListener();
       }
     });
@@ -304,7 +306,7 @@ class OwnerHomeContent extends StatelessWidget {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              "Menu Cepat",
+                              "Menu",
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,

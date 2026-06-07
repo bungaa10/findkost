@@ -60,7 +60,7 @@ class _OwnerBookingScreenState extends State<OwnerBookingScreen> {
                   'duration': b.durasiBulan,
                   'total_price': b.totalHarga,
                   'check_in_date':
-                      '${b.tanggalMasuk.year}-${b.tanggalMasuk.month.toString().padLeft(2, '0')}-${b.tanggalMasuk.day.toString().padLeft(2, '0')}',
+                      '${b.tanggalMasuk.day.toString().padLeft(2, '0')}/${b.tanggalMasuk.month.toString().padLeft(2, '0')}/${b.tanggalMasuk.year}',
                   'note': b.catatan ?? '',
                   'status': b.status,
                   'created_at':
@@ -479,10 +479,6 @@ class _OwnerBookingScreenState extends State<OwnerBookingScreen> {
                                   ),
                                 ],
                               ),
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.refresh_rounded, color: Colors.white),
-                              onPressed: _loadBookings,
                             ),
                           ],
                         ),

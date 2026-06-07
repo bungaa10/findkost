@@ -32,6 +32,25 @@ class BookingModel {
   });
 
   factory BookingModel.fromJson(Map<String, dynamic> json) {
+    // Parse tanggal_masuk secara manual agar tidak bergeser karena timezone UTC
+    DateTime parseTanggal(String? raw) {
+      if (raw == null || raw.isEmpty) return DateTime.now();
+      try {
+        // Format: YYYY-MM-DD atau YYYY-MM-DD HH:mm:ss
+        final parts = raw.split(' ')[0].split('-');
+        if (parts.length == 3) {
+          return DateTime(
+            int.parse(parts[0]),  // year
+            int.parse(parts[1]),  // month
+            int.parse(parts[2]),  // day
+          );
+        }
+        return DateTime.parse(raw).toLocal();
+      } catch (_) {
+        return DateTime.now();
+      }
+    }
+
     return BookingModel(
       id: json['id'] is int ? json['id'] : int.parse(json['id'].toString()),
       kostId: json['kost_id'] is int ? json['kost_id'] : int.parse(json['kost_id'].toString()),
@@ -43,9 +62,9 @@ class BookingModel {
       status: json['status'] ?? 'pending',
       durasiBulan: json['durasi_bulan'] is int ? json['durasi_bulan'] : int.parse(json['durasi_bulan'].toString()),
       totalHarga: (json['total_harga'] is int ? json['total_harga'] : double.parse(json['total_harga'].toString())).toDouble(),
-      tanggalMasuk: DateTime.parse(json['tanggal_masuk']),
+      tanggalMasuk: parseTanggal(json['tanggal_masuk']),
       catatan: json['catatan'],
-      createdAt: DateTime.parse(json['created_at']),
+      createdAt: DateTime.parse(json['created_at']).toLocal(),
     );
   }
 

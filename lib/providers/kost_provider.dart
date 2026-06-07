@@ -13,7 +13,8 @@ class KostProvider extends ChangeNotifier {
 
   final String baseUrl = 'http://192.168.0.107/findkost_api/kost';
 
-  Future<void> fetchKost() async { //Ambil semua data kost dari MySQL menggunakan API (async)
+  /// Ambil semua kost (untuk Mahasiswaserching)
+  Future<void> fetchKost() async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
@@ -35,6 +36,30 @@ class KostProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Ambil kost milik pemilik tertentu saja (untuk Owner Dashboard)
+  Future<void> fetchKostByOwner(int ownerId) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/index.php?owner_id=$ownerId'),
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        _kosts = data.map((json) => KostModel.fromJson(json)).toList();
+      } else {
+        _errorMessage = 'Gagal memuat data kost';
+      }
+    } catch (e) {
+      _errorMessage = 'Error: $e';
+    }
+
+    _isLoading = false;
+    notifyListeners();
+  }
   Future<bool> createKost(KostModel kost) async {  //implementasi create kost dengan API (async)
     _isLoading = true;
     notifyListeners();
@@ -49,7 +74,7 @@ class KostProvider extends ChangeNotifier {
       final result = json.decode(response.body);
 
       if (result['success'] == true) {
-        await fetchKost(); 
+        // UI already handles fetching the correct list (all or by owner)
         return true;
       } else {
         _errorMessage = result['message'] ?? 'Gagal menambah kost';
@@ -63,7 +88,6 @@ class KostProvider extends ChangeNotifier {
       notifyListeners();
     }
   }
-
   Future<bool> updateKost(KostModel kost) async {  //implementasi update kost dengan API (async)
     _isLoading = true;
     notifyListeners();
@@ -78,7 +102,7 @@ class KostProvider extends ChangeNotifier {
       final result = json.decode(response.body);
 
       if (result['success'] == true) {
-        await fetchKost();
+        // UI already handles fetching the correct list
         return true;
       } else {
         _errorMessage = result['message'] ?? 'Gagal mengupdate kost';
@@ -92,7 +116,6 @@ class KostProvider extends ChangeNotifier {
       notifyListeners();
     }
   }
-
   Future<bool> deleteKost(int id) async { //implementasi delete kost dengan API (async)
     _isLoading = true;
     notifyListeners();

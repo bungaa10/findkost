@@ -13,13 +13,11 @@ class AuthProvider extends ChangeNotifier {
   final AuthService _authService = AuthService();
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn.instance; //login google
-
   Map<String, dynamic>? user;
   bool isLoading = false;
   String? errorMessage;
   bool _initialized = false;
   bool get isLogin => user != null;
-
   AuthProvider() {
     _firebaseAuth.authStateChanges().listen((User? firebaseUser) {
       if (firebaseUser == null && user != null) {
@@ -29,14 +27,12 @@ class AuthProvider extends ChangeNotifier {
     });
     _initGoogleSignIn();
   }
-
   Future<void> _initGoogleSignIn() async {
     if (_initialized) return;
     _initialized = true;
     await _googleSignIn.initialize();
     await _googleSignIn.attemptLightweightAuthentication();
   }
-
 Future<bool> login(String email, String password, String role) async {
   isLoading = true;
   errorMessage = null;
@@ -76,7 +72,6 @@ Future<bool> login(String email, String password, String role) async {
 
 String get userRole => user?["role"] ?? "mahasiswa";
 bool get isPemilik => userRole == "pemilik";
-
   Future<bool> signInWithGoogle() async {
     isLoading = true;
     errorMessage = null;
@@ -155,7 +150,6 @@ bool get isPemilik => userRole == "pemilik";
       notifyListeners();
     }
   }
-
   Future<void> logout() async {
     isLoading = true;
     notifyListeners();
@@ -176,7 +170,6 @@ bool get isPemilik => userRole == "pemilik";
     
     notifyListeners();
   }
-
 Future<void> loadSession() async {
   final prefs = await SharedPreferences.getInstance();
   bool login = prefs.getBool("isLogin") ?? false;
@@ -198,12 +191,10 @@ Future<void> loadSession() async {
     print('📱 User not logged in'); 
   }
 }
-
   void clearError() {
     errorMessage = null;
     notifyListeners();
   }
-
   void _initSocket() {
     if (user != null) {
       SocketService().onConnected = () {

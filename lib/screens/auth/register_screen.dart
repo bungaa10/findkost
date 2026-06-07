@@ -182,7 +182,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF0D2B55),
+                      color: Color.fromARGB(255, 254, 254, 254),
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -190,7 +190,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     "Isi data diri Anda dengan benar",
                     style: TextStyle(
                       fontSize: 13,
-                      color: Colors.grey[600],
+                      color: const Color.fromARGB(255, 250, 248, 248),
                     ),
                   ),
                   const SizedBox(height: 30),

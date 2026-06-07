@@ -4,17 +4,15 @@ import '../models/booking_model.dart';
 
 class BookingProvider extends ChangeNotifier {
   final BookingService _service = BookingService();
-  
+
   List<BookingModel> myBookings = [];
   List<BookingModel> ownerBookings = [];
   bool isLoading = false;
   String? errorMessage;
-
   Future<void> getMyBookings(int userId) async {
     isLoading = true;
     errorMessage = null;
     notifyListeners();
-
     try {
       final response = await _service.getMyBookings(userId);
       if (response['success'] == true) {
@@ -32,12 +30,10 @@ class BookingProvider extends ChangeNotifier {
       notifyListeners();
     }
   }
-
   Future<void> getOwnerBookings(int ownerId) async {
     isLoading = true;
     errorMessage = null;
     notifyListeners();
-
     try {
       final response = await _service.getOwnerBookings(ownerId);
       if (response['success'] == true) {
@@ -103,7 +99,8 @@ class BookingProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> updateStatus(int bookingId, String status) async { //implementasi update status booking dengan API (async)
+  Future<bool> updateStatus(int bookingId, String status) async {
+    //implementasi update status booking dengan API (async)
     isLoading = true;
     notifyListeners();
 

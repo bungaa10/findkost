@@ -411,23 +411,30 @@ class _LoginScreenState extends State<LoginScreen> {
                                       );
                                     }
                                   },
-                            icon: Container(
+                            icon: Image.network(
+                              'https://developers.google.com/identity/images/g-logo.png',
                               width: 24,
                               height: 24,
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF4285F4),
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: const Center(
-                                child: Text(
-                                  'G',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w900,
-                                    fontSize: 14,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Container(
+                                  width: 24,
+                                  height: 24,
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF4285F4),
+                                    borderRadius: BorderRadius.circular(4),
                                   ),
-                                ),
-                              ),
+                                  child: const Center(
+                                    child: Text(
+                                      'G',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w900,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
                             ),
                             label: const Text(
                               'Masuk dengan Google',
