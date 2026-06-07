@@ -29,6 +29,23 @@ class NotificationService {
       },
     );
 
+    // Buat channel high importance secara eksplisit agar dikenali FCM di background
+    final androidPlugin = _flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin>();
+        
+    if (androidPlugin != null) {
+      await androidPlugin.createNotificationChannel(
+        const AndroidNotificationChannel(
+          'findkost_channel', // id
+          'FindKost Notifikasi', // title
+          description: 'Notifikasi untuk booking kost', // description
+          importance: Importance.high,
+          playSound: true,
+          enableVibration: true,
+        )
+      );
+    }
+
     // Setup Firebase Messaging Foreground Handler
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       debugPrint('🔔 Got a message whilst in the foreground!');

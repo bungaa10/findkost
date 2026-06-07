@@ -1,10 +1,8 @@
 plugins {
     id("com.android.application")
-    id("com.google.gms.google-services")
-    id("kotlin-android")
-    id("dev.flutter.flutter-gradle-plugin")
     id("org.jetbrains.kotlin.android")
     id("dev.flutter.flutter-gradle-plugin")
+    id("com.google.gms.google-services") version "4.4.4"
 }
 
 
@@ -29,7 +27,7 @@ android {
         applicationId = "com.example.findkost"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = 21
+        minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
